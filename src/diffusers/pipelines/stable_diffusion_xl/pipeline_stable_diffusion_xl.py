@@ -1254,8 +1254,9 @@ class StableDiffusionXLPipeline(
                     xm.mark_step()
 
         if not output_type == "latent":
-            # make sure the VAE is in float32 mode, as it overflows in float16
+            # make sure the VAE is in float32 mode, as it overflows in bfloat16 ?
             needs_upcasting = self.vae.dtype == torch.float16 and self.vae.config.force_upcast
+            needs_upcasting = self.vae.dtype == torch.bfloat16 and self.vae.config.force_upcast
 
             if needs_upcasting:
                 self.upcast_vae()
@@ -1279,12 +1280,13 @@ class StableDiffusionXLPipeline(
                 latents = latents * latents_std / self.vae.config.scaling_factor + latents_mean
             else:
                 latents = latents / self.vae.config.scaling_factor
+                
+            self.vae.to("cpu")  # Move the VAE to CPU
+            image = self.vae.decode(latents.to("cpu"), return_dict=False)[0]
 
-            image = self.vae.decode(latents, return_dict=False)[0]
-
-            # cast back to fp16 if needed
+            # cast back to bf16 if needed
             if needs_upcasting:
-                self.vae.to(dtype=torch.float16)
+                self.vae.to(dtype=torch.bfloat16)
         else:
             image = latents
 
