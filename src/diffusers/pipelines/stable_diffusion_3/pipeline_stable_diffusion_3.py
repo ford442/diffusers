@@ -255,7 +255,8 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
                 device=device,
                 dtype=dtype,
             )
-
+        if self.pipe.tokenizer_3.device != "cuda":
+            self.pipe.tokenizer_3.to("cuda")
         text_inputs = self.tokenizer_3(
             prompt,
             padding="max_length",
@@ -284,6 +285,8 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
         # duplicate text embeddings and attention mask for each generation per prompt, using mps friendly method
         prompt_embeds = prompt_embeds.repeat(1, num_images_per_prompt, 1)
         prompt_embeds = prompt_embeds.view(batch_size * num_images_per_prompt, seq_len, -1)
+        
+        self.pipe.tokenizer_3.to("cpu")
 
         return prompt_embeds
 
@@ -296,7 +299,10 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
         clip_model_index: int = 0,
     ):
         device = device or self._execution_device
-
+        if self.pipe.text_encoder.device != "cuda":
+            self.pipe.text_encoder.to("cuda")
+        if self.pipe.text_encoder_2.device != "cuda":
+            self.pipe.text_encoder_2.to("cuda")
         clip_tokenizers = [self.tokenizer, self.tokenizer_2]
         clip_text_encoders = [self.text_encoder, self.text_encoder_2]
 
@@ -339,6 +345,8 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
 
         pooled_prompt_embeds = pooled_prompt_embeds.repeat(1, num_images_per_prompt, 1)
         pooled_prompt_embeds = pooled_prompt_embeds.view(batch_size * num_images_per_prompt, -1)
+        self.pipe.text_encoder.to("cpu")
+        self.pipe.text_encoder_2.to("cpu")
 
         return prompt_embeds, pooled_prompt_embeds
 
@@ -409,7 +417,10 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
                 A lora scale that will be applied to all LoRA layers of the text encoder if LoRA layers are loaded.
         """
         device = device or self._execution_device
-
+        if self.pipe.text_encoder.device != "cuda":
+            self.pipe.text_encoder.to("cuda")
+        if self.pipe.text_encoder_2.device != "cuda":
+            self.pipe.text_encoder_2.to("cuda")
         # set lora scale so that monkey patched LoRA
         # function of text encoder can correctly access it
         if lora_scale is not None and isinstance(self, SD3LoraLoaderMixin):
@@ -532,7 +543,8 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
             if isinstance(self, SD3LoraLoaderMixin) and USE_PEFT_BACKEND:
                 # Retrieve the original scale by scaling back the LoRA layers
                 unscale_lora_layers(self.text_encoder_2, lora_scale)
-
+        self.pipe.text_encoder.to("cpu")
+        self.pipe.text_encoder_2.to("cpu")
         return prompt_embeds, negative_prompt_embeds, pooled_prompt_embeds, negative_pooled_prompt_embeds
 
     def check_inputs(
@@ -1127,9 +1139,13 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
 
         else:
             latents = (latents / self.vae.config.scaling_factor) + self.vae.config.shift_factor
+            
+            self.pipe.transformer.to("cpu")
 
             image = self.vae.decode(latents, return_dict=False)[0]
             image = self.image_processor.postprocess(image, output_type=output_type)
+            
+            self.pipe.transformer.to("cuda")
 
         # Offload all models
         self.maybe_free_model_hooks()
