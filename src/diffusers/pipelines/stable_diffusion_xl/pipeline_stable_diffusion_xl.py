@@ -1256,7 +1256,6 @@ class StableDiffusionXLPipeline(
         if not output_type == "latent":
             # make sure the VAE is in float32 mode, as it overflows in bfloat16 ?
             needs_upcasting = self.vae.dtype == torch.float16 and self.vae.config.force_upcast
-            needs_upcasting = self.vae.dtype == torch.bfloat16 and self.vae.config.force_upcast
 
             if needs_upcasting:
                 self.upcast_vae()
