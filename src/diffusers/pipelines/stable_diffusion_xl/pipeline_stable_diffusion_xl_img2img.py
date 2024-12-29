@@ -1474,9 +1474,8 @@ class StableDiffusionXLImg2ImgPipeline(
                 latents = latents * latents_std / self.vae.config.scaling_factor + latents_mean
             else:
                 latents = latents / self.vae.config.scaling_factor
-
+            self.unet.to(torch.device('cpu')
             image = self.vae.decode(latents, return_dict=False)[0]
-
             # cast back to fp16 if needed
             if needs_upcasting:
                 self.vae.to(dtype=torch.float16)
@@ -1488,6 +1487,7 @@ class StableDiffusionXLImg2ImgPipeline(
             image = self.watermark.apply_watermark(image)
 
         image = self.image_processor.postprocess(image, output_type=output_type)
+        self.unet.to(torch.device('cuda')
 
         # Offload all models
         self.maybe_free_model_hooks()
