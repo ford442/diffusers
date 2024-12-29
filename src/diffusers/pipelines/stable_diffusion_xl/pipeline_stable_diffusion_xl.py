@@ -1281,8 +1281,9 @@ class StableDiffusionXLPipeline(
             else:
                 latents = latents / self.vae.config.scaling_factor
                 
-            self.vae.to("cpu")  # Move the VAE to CPU
-            image = self.vae.decode(latents.to("cpu"), return_dict=False)[0]
+            self.unet.to("cpu")  # Move the UNET to CPU
+            image = self.vae.decode(latents, return_dict=False)[0]
+            self.unet.to("cuda")  # Move the UNET to CPU
 
             # cast back to bf16 if needed
             if needs_upcasting:
