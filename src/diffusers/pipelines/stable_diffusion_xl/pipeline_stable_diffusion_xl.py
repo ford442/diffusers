@@ -339,11 +339,12 @@ class StableDiffusionXLPipeline(
                 Number of layers to be skipped from CLIP while computing the prompt embeddings. A value of 1 means that
                 the output of the pre-final layer will be used for computing the prompt embeddings.
         """
+        if self.text_encoder.device != "cuda":
+            self.text_encoder.to("cuda")
+        if self.text_encoder_2.device != "cuda":
+            self.text_encoder_2.to("cuda")        
         device = device or self._execution_device
-        #if self.text_encoder.device != "cuda":
-        #    self.text_encoder.to("cuda")
-        #if self.text_encoder_2.device != "cuda":
-        #    self.text_encoder_2.to("cuda")
+
         # set lora scale so that monkey patched LoRA
         # function of text encoder can correctly access it
         if lora_scale is not None and isinstance(self, StableDiffusionXLLoraLoaderMixin):
@@ -515,8 +516,8 @@ class StableDiffusionXLPipeline(
             if isinstance(self, StableDiffusionXLLoraLoaderMixin) and USE_PEFT_BACKEND:
                 # Retrieve the original scale by scaling back the LoRA layers
                 unscale_lora_layers(self.text_encoder_2, lora_scale)
-        #self.text_encoder.to("cpu")
-        #self.text_encoder_2.to("cpu")
+        self.text_encoder.to("cpu")
+        self.text_encoder_2.to("cpu")
         return prompt_embeds, negative_prompt_embeds, pooled_prompt_embeds, negative_pooled_prompt_embeds
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.encode_image
