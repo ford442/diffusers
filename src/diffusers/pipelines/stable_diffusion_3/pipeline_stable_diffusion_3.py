@@ -239,6 +239,9 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
     ):
+        if self.text_encoder_3.device != "cuda":
+            self.text_encoder_3.to("cuda")
+            
         device = device or self._execution_device
         dtype = dtype or self.text_encoder.dtype
 
@@ -255,8 +258,7 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
                 device=device,
                 dtype=dtype,
             )
-        if self.text_encoder_3.device != "cuda":
-            self.text_encoder_3.to("cuda")
+
         text_inputs = self.tokenizer_3(
             prompt,
             padding="max_length",
@@ -298,11 +300,12 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
         clip_skip: Optional[int] = None,
         clip_model_index: int = 0,
     ):
+        if self.text_encoder.device != "cuda":
+            self.text_encoder.to("cuda")
+        if self.text_encoder_2.device != "cuda":
+            self.text_encoder_2.to("cuda")        
         device = device or self._execution_device
-        #if self.text_encoder.device != "cuda":
-        #    self.text_encoder.to("cuda")
-        #if self.text_encoder_2.device != "cuda":
-        #    self.text_encoder_2.to("cuda")
+
         clip_tokenizers = [self.tokenizer, self.tokenizer_2]
         clip_text_encoders = [self.text_encoder, self.text_encoder_2]
 
@@ -416,11 +419,12 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
             lora_scale (`float`, *optional*):
                 A lora scale that will be applied to all LoRA layers of the text encoder if LoRA layers are loaded.
         """
+        if self.text_encoder.device != "cuda":
+            self.text_encoder.to("cuda")
+        if self.text_encoder_2.device != "cuda":
+            self.text_encoder_2.to("cuda") 
         device = device or self._execution_device
-        #if self.text_encoder.device != "cuda":
-        #    self.text_encoder.to("cuda")
-        #if self.text_encoder_2.device != "cuda":
-        #    self.text_encoder_2.to("cuda")
+
         # set lora scale so that monkey patched LoRA
         # function of text encoder can correctly access it
         if lora_scale is not None and isinstance(self, SD3LoraLoaderMixin):
