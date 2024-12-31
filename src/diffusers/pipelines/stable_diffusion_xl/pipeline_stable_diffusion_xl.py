@@ -1212,8 +1212,8 @@ class StableDiffusionXLPipeline(
                 if ip_adapter_image is not None or ip_adapter_image_embeds is not None:
                     added_cond_kwargs["image_embeds"] = image_embeds
                     
-                latent_model_input = latent_model_input.to(device)
-                prompt_embeds = prompt_embeds.to(device)
+                latent_model_input = latent_model_input.to(torch.device('cuda'))
+                prompt_embeds = prompt_embeds.to(torch.device('cuda'))
 
                 noise_pred = self.unet(
                     latent_model_input,
