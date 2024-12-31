@@ -229,6 +229,8 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
     ):
+        if self.text_encoder.device != "cuda":
+            self.text_encoder.to("cuda")
         device = device or self._execution_device
         dtype = dtype or self.text_encoder.dtype
 
@@ -266,7 +268,7 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
 
         prompt_attention_mask = prompt_attention_mask.view(batch_size, -1)
         prompt_attention_mask = prompt_attention_mask.repeat(num_videos_per_prompt, 1)
-
+        self.text_encoder.to("cpu")
         return prompt_embeds, prompt_attention_mask
 
     # Copied from diffusers.pipelines.mochi.pipeline_mochi.MochiPipeline.encode_prompt with 256->128
@@ -872,9 +874,10 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
                     :, None, None, None, None
                 ]
                 latents = (1 - decode_noise_scale) * latents + decode_noise_scale * noise
-
+            self.transformer.to(torch.device('cpu'))
             video = self.vae.decode(latents, timestep, return_dict=False)[0]
             video = self.video_processor.postprocess_video(video, output_type=output_type)
+            self.transformer.to(torch.device('cuda'))
 
         # Offload all models
         self.maybe_free_model_hooks()
