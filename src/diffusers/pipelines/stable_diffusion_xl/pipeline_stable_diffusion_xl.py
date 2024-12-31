@@ -720,7 +720,7 @@ class StableDiffusionXLPipeline(
             )
 
         if latents is None:
-            latents = randn_tensor(shape, generator=generator, device=device, dtype=dtype)
+            latents = randn_tensor(shape, generator=generator, device=torch.device('cuda'), dtype=dtype)
         else:
             latents = latents.to(device)
 
