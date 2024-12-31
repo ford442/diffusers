@@ -1211,6 +1211,10 @@ class StableDiffusionXLPipeline(
                 added_cond_kwargs = {"text_embeds": add_text_embeds, "time_ids": add_time_ids}
                 if ip_adapter_image is not None or ip_adapter_image_embeds is not None:
                     added_cond_kwargs["image_embeds"] = image_embeds
+                    
+                latent_model_input = latent_model_input.to(device)
+                prompt_embeds = prompt_embeds.to(device)
+
                 noise_pred = self.unet(
                     latent_model_input,
                     t,
