@@ -754,7 +754,7 @@ class StableDiffusionXLPipeline(
 
     def upcast_vae(self):
         dtype = self.vae.dtype
-        self.vae.to(dtype=torch.float32)
+        self.vae.to(dtype=torch.float64)
         use_torch_2_0_or_xformers = isinstance(
             self.vae.decoder.mid_block.attentions[0].processor,
             (
