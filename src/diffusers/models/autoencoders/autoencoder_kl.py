@@ -293,7 +293,7 @@ class AutoencoderKL(ModelMixin, ConfigMixin, FromOriginalModelMixin, PeftAdapter
             return self.tiled_decode(z, return_dict=return_dict)
 
         if self.post_quant_conv is not None:
-            z = self.post_quant_conv(z.to(torch.float64))  # Convert z to float32 here
+            z = self.post_quant_conv(z.to(torch.float32))  # Convert z to float32 here
 
 
         dec = self.decoder(z)
