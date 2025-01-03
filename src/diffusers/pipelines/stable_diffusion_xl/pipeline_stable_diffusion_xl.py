@@ -1266,10 +1266,6 @@ class StableDiffusionXLPipeline(
                 latents = latents / self.vae.config.scaling_factor
                 self.vae.to(torch.float32)
                 latents.to(torch.float32)
-                for name, module in self.vae.decoder.named_modules(): 
-                    if isinstance(module, (nn.Linear, nn.Conv2d)):
-                        module.bias = module.bias.to(torch.float32) 
-
                 image = self.vae.decode(latents, return_dict=False)[0]
 
             self.vae.to(dtype=torch.bfloat16)
