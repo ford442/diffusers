@@ -1246,8 +1246,8 @@ class StableDiffusionXLPipeline(
             if needs_upcasting:
                 self.upcast_vae()
                 latents = latents.to(next(iter(self.vae.post_quant_conv.parameters())).dtype)
-            elif latents.dtype != self.vae.dtype:
-                if torch.backends.mps.is_available():
+            #elif latents.dtype != self.vae.dtype:
+                #if torch.backends.mps.is_available():
                     # some platforms (eg. apple mps) misbehave due to a pytorch bug: https://github.com/pytorch/pytorch/pull/99272
                     #self.vae = self.vae.to(latents.dtype)
 
