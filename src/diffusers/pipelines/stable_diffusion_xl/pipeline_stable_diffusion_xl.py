@@ -1266,7 +1266,8 @@ class StableDiffusionXLPipeline(
             else:
                 latents = latents / self.vae.config.scaling_factor
 
-            image = self.vae.decode(latents, return_dict=False)[0]
+                latents.to(torch.float32)
+                image = self.vae.decode(latents, return_dict=False)[0]
 
             self.vae.to(dtype=torch.bfloat16)
 
