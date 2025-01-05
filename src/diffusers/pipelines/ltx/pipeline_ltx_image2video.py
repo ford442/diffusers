@@ -878,7 +878,8 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
             video = self.vae.decode(latents, timestep, return_dict=False)[0]
             video = self.video_processor.postprocess_video(video, output_type=output_type)
             self.transformer.to(torch.device('cuda'))
-
+            if self.text_encoder.device != "cuda":
+                self.text_encoder.to("cuda")
         # Offload all models
         self.maybe_free_model_hooks()
 
