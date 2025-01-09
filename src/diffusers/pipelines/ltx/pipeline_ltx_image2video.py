@@ -235,7 +235,9 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
     ):
+        print('doing text_encoder cuda check')
         if self.text_encoder.device != "cuda":
+            print('doing text_encoder to cuda')
             self.text_encoder.to("cuda")
         device = device or self._execution_device
         dtype = dtype or self.text_encoder.dtype
@@ -274,6 +276,7 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
 
         prompt_attention_mask = prompt_attention_mask.view(batch_size, -1)
         prompt_attention_mask = prompt_attention_mask.repeat(num_videos_per_prompt, 1)
+        print('doing text_encoder to cpu')
         self.text_encoder.to("cpu")
         return prompt_embeds, prompt_attention_mask
 
@@ -881,10 +884,15 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
                 ]
                 latents = (1 - decode_noise_scale) * latents + decode_noise_scale * noise
             self.transformer.to(torch.device('cpu'))
+            print('doing transformer to cpu')
+
             video = self.vae.decode(latents, timestep, return_dict=False)[0]
             video = self.video_processor.postprocess_video(video, output_type=output_type)
             self.transformer.to(torch.device('cuda'))
+            print('doing transformer to cuda')
+            print('doing check text_encoder cuda')
             if self.text_encoder.device != "cuda":
+                print('doing text_encoder to cuda')
                 self.text_encoder.to("cuda")
         # Offload all models
         self.maybe_free_model_hooks()
