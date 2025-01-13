@@ -1294,7 +1294,7 @@ class StableDiffusionXLPipeline(
                 print('Move UNET to CPU.')
                 self.unet.to("cpu") 
                 print('Checking if VAE is on CUDA.')
-                if vae.device.type == "cpu":
+                if self.vae.device.type == "cpu":
                     print('doing VAE to CUDA.')
                     self.vae.to("cuda")
                 print('VAE Decode.')
