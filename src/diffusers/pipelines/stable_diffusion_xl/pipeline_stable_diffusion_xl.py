@@ -272,10 +272,14 @@ class StableDiffusionXLPipeline(
 
         
         self.register_to_config(force_zeros_for_empty_prompt=force_zeros_for_empty_prompt)
-        self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
+        self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1) if getattr(self, "vae", None) else 8
         self.image_processor = VaeImageProcessor(vae_scale_factor=self.vae_scale_factor)
 
-        self.default_sample_size = self.unet.config.sample_size
+        self.default_sample_size = (
+            self.unet.config.sample_size
+            if hasattr(self, "unet") and self.unet is not None and hasattr(self.unet.config, "sample_size")
+            else 128
+        )
 
         add_watermarker = add_watermarker if add_watermarker is not None else is_invisible_watermark_available()
 
@@ -342,12 +346,14 @@ class StableDiffusionXLPipeline(
                 Number of layers to be skipped from CLIP while computing the prompt embeddings. A value of 1 means that
                 the output of the pre-final layer will be used for computing the prompt embeddings.
         """
-
-        if self.text_encoder.device != "cuda":
+        print('Checking if Text Encoder 1 is on CUDA')
+        if self.text_encoder.device.type == "cpu":
+            print('Moving Text Encoder 1 to CUDA')
             self.text_encoder.to("cuda")
-        if self.text_encoder_2.device != "cuda":
+        print('Checking if Text Encoder 2 is on CUDA')
+        if self.text_encoder_2.device.type == "cpu":
+            print('Moving Text Encoder 2 to CUDA')
             self.text_encoder_2.to("cuda")        
-
         
         device = device or self._execution_device
 
@@ -416,7 +422,9 @@ class StableDiffusionXLPipeline(
                 prompt_embeds = text_encoder(text_input_ids.to(device), output_hidden_states=True)
 
                 # We are only ALWAYS interested in the pooled output of the final text encoder
-                pooled_prompt_embeds = prompt_embeds[0]
+                if pooled_prompt_embeds is None and prompt_embeds[0].ndim == 2:
+                    pooled_prompt_embeds = prompt_embeds[0]
+
                 if clip_skip is None:
                     prompt_embeds = prompt_embeds.hidden_states[-2]
                 else:
@@ -475,8 +483,10 @@ class StableDiffusionXLPipeline(
                     uncond_input.input_ids.to(device),
                     output_hidden_states=True,
                 )
+
                 # We are only ALWAYS interested in the pooled output of the final text encoder
-                negative_pooled_prompt_embeds = negative_prompt_embeds[0]
+                if negative_pooled_prompt_embeds is None and negative_prompt_embeds[0].ndim == 2:
+                    negative_pooled_prompt_embeds = negative_prompt_embeds[0]
                 negative_prompt_embeds = negative_prompt_embeds.hidden_states[-2]
 
                 negative_prompt_embeds_list.append(negative_prompt_embeds)
@@ -522,8 +532,11 @@ class StableDiffusionXLPipeline(
             if isinstance(self, StableDiffusionXLLoraLoaderMixin) and USE_PEFT_BACKEND:
                 # Retrieve the original scale by scaling back the LoRA layers
                 unscale_lora_layers(self.text_encoder_2, lora_scale)
+        print('Moving Text Encoder 1 to CPU')
         self.text_encoder.to("cpu")
+        print('Moving Text Encoder 2 to CPU')
         self.text_encoder_2.to("cpu")
+        print('Finished moving Text Encoder 2 to CPU')
         return prompt_embeds, negative_prompt_embeds, pooled_prompt_embeds, negative_pooled_prompt_embeds
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.encode_image
@@ -1275,16 +1288,26 @@ class StableDiffusionXLPipeline(
                 latents = latents * latents_std / self.vae.config.scaling_factor + latents_mean
             else:
                 latents = latents / self.vae.config.scaling_factor
-                print('Changing latent/VAE to float32')
+                print('Changing latent/VAE to float64')
                 self.vae.to(torch.float64)
                 latents.to(torch.float64)
-                self.unet.to("cpu")  # Move the UNET to CPU
+                print('Move UNET to CPU.')
+                self.unet.to("cpu") 
+                print('Checking if VAE is on CUDA.')
+                if self.vae.device.type == "cpu":
+                    print('doing VAE to CUDA.')
+                    self.vae.to("cuda")
+                print('VAE Decode.')
                 image = self.vae.decode(latents, return_dict=False)[0]
-                self.unet.to("cuda")  # Move the UNET to CPU
-
+                print('Move UNET to CUDA.')
+                self.unet.to("cuda") 
+            print('Move VAE to BFLOAT16.')
             self.vae.to(dtype=torch.bfloat16)
-            self.text_encoder.to("cuda")
-            self.text_encoder_2.to("cuda")
+           # print('Move Text Encoder 1 to CUDA.')
+           # self.text_encoder.to("cuda")
+           # print('Move Text Encoder 2 to CUDA.')
+           # self.text_encoder_2.to("cuda")
+           # print('Finished moving Text Encoder 2 to CUDA.')
         else:
             image = latents
 
