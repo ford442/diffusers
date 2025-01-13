@@ -1172,7 +1172,10 @@ class StableDiffusionXLPipeline(
                 batch_size * num_images_per_prompt,
                 self.do_classifier_free_guidance,
             )
-
+            
+        print('moving vae to cpu')
+        self.vae.to('cpu')
+        
         # 8. Denoising loop
         num_warmup_steps = max(len(timesteps) - num_inference_steps * self.scheduler.order, 0)
 
@@ -1293,10 +1296,10 @@ class StableDiffusionXLPipeline(
                 latents.to(torch.float64)
                 print('Move UNET to CPU.')
                 self.unet.to("cpu") 
-                print('Checking if VAE is on CUDA.')
-                if self.vae.device.type == "cpu":
-                    print('doing VAE to CUDA.')
-                    self.vae.to("cuda")
+                #print('Checking if VAE is on CUDA.')
+                #if self.vae.device.type == "cpu":
+                print('doing VAE to CUDA.')
+                self.vae.to("cuda")
                 print('VAE Decode.')
                 image = self.vae.decode(latents, return_dict=False)[0]
                 print('Move UNET to CUDA.')
