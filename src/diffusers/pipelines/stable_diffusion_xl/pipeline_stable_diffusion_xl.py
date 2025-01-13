@@ -346,10 +346,13 @@ class StableDiffusionXLPipeline(
                 Number of layers to be skipped from CLIP while computing the prompt embeddings. A value of 1 means that
                 the output of the pre-final layer will be used for computing the prompt embeddings.
         """
-
+        print('Checking if Text Encoder 1 is on CUDA')
         if self.text_encoder.device != "cuda":
+            print('Moving Text Encoder 1 to CUDA')
             self.text_encoder.to("cuda")
+        print('Checking if Text Encoder 2 is on CUDA')
         if self.text_encoder_2.device != "cuda":
+            print('Moving Text Encoder 2 to CUDA')
             self.text_encoder_2.to("cuda")        
 
         
@@ -530,8 +533,11 @@ class StableDiffusionXLPipeline(
             if isinstance(self, StableDiffusionXLLoraLoaderMixin) and USE_PEFT_BACKEND:
                 # Retrieve the original scale by scaling back the LoRA layers
                 unscale_lora_layers(self.text_encoder_2, lora_scale)
+        print('Moving Text Encoder 1 to CPU')
         self.text_encoder.to("cpu")
+        print('Moving Text Encoder 2 to CPU')
         self.text_encoder_2.to("cpu")
+        print('Finished moving Text Encoder 2 to CPU')
         return prompt_embeds, negative_prompt_embeds, pooled_prompt_embeds, negative_pooled_prompt_embeds
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.encode_image
@@ -1286,13 +1292,19 @@ class StableDiffusionXLPipeline(
                 print('Changing latent/VAE to float32')
                 self.vae.to(torch.float64)
                 latents.to(torch.float64)
+                print('Move UNET to CPU.')
                 self.unet.to("cpu")  # Move the UNET to CPU
+                print('VAE Decode.')
                 image = self.vae.decode(latents, return_dict=False)[0]
+                print('Move UNET to CUDA.')
                 self.unet.to("cuda")  # Move the UNET to CPU
-
+            print('Move VAE to BFLOAT16.')
             self.vae.to(dtype=torch.bfloat16)
+            print('Move Text Encoder 1 to CUDA.')
             self.text_encoder.to("cuda")
+            print('Move Text Encoder 2 to CUDA.')
             self.text_encoder_2.to("cuda")
+            print('Finished moving Text Encoder 2 to CUDA.')
         else:
             image = latents
 
