@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import gc
+
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -239,7 +241,7 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
     ):
-        if self.text_encoder_3.device != "cuda":
+        if self.text_encoder_3.device.type == "cpu":
             self.text_encoder_3.to("cuda")
             
         device = device or self._execution_device
@@ -419,10 +421,11 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
             lora_scale (`float`, *optional*):
                 A lora scale that will be applied to all LoRA layers of the text encoder if LoRA layers are loaded.
         """
-        if self.text_encoder.device != "cuda":
-            self.text_encoder.to("cuda")
-        if self.text_encoder_2.device != "cuda":
-            self.text_encoder_2.to("cuda") 
+        #if self.text_encoder.device.type == "cpu":
+        #    self.text_encoder.to("cuda")
+        #if self.text_encoder_2.device.type == "cpu":
+        #    self.text_encoder_2.to("cuda") 
+        
         device = device or self._execution_device
 
         # set lora scale so that monkey patched LoRA
@@ -547,8 +550,7 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
             if isinstance(self, SD3LoraLoaderMixin) and USE_PEFT_BACKEND:
                 # Retrieve the original scale by scaling back the LoRA layers
                 unscale_lora_layers(self.text_encoder_2, lora_scale)
-        #self.text_encoder.to("cpu")
-        #self.text_encoder_2.to("cpu")
+
         return prompt_embeds, negative_prompt_embeds, pooled_prompt_embeds, negative_pooled_prompt_embeds
 
     def check_inputs(
@@ -1062,10 +1064,12 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
                 self._joint_attention_kwargs = {"ip_adapter_image_embeds": ip_adapter_image_embeds}
             else:
                 self._joint_attention_kwargs.update(ip_adapter_image_embeds=ip_adapter_image_embeds)
-        print('moving text_encoder, text_encoder_2, text_encoder_3, vae to cpu           XXXX')
-        self.text_encoder.to("cpu")
-        self.text_encoder_2.to("cpu")
-        self.text_encoder_3.to("cpu")
+        print('deleting text_encoder, text_encoder_2, text_encoder_3                     XXXX')
+        del self.text_encoder
+        del self.text_encoder_2
+        del self.text_encoder_3
+        gc.collect()
+        print('moving vae to cpu                                                         XXXX')
         self.vae.to("cpu")
         print('done moving text_encoder, text_encoder_2, text_encoder_3, vae to cpu      XXXX')
         # 7. Denoising loop
