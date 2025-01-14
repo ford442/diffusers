@@ -497,7 +497,7 @@ class LTXPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLoraLoaderMixi
     def interrupt(self):
         return self._interrupt
 
-    @torch.no_grad()
+    @torch.inference_mode()
     @replace_example_docstring(EXAMPLE_DOC_STRING)
     def __call__(
         self,
