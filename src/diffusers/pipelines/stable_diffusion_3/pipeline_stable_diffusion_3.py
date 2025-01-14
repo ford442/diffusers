@@ -786,7 +786,7 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
 
         super().enable_sequential_cpu_offload(*args, **kwargs)
 
-    @torch.no_grad()
+    @torch.inference_mode()
     @replace_example_docstring(EXAMPLE_DOC_STRING)
     def __call__(
         self,
