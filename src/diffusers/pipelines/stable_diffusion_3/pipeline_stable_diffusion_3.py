@@ -241,9 +241,7 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
         device: Optional[torch.device] = None,
         dtype: Optional[torch.dtype] = None,
     ):
-        if self.text_encoder_3.device.type == "cpu":
-            self.text_encoder_3.to("cuda")
-            
+
         device = device or self._execution_device
         dtype = dtype or self.text_encoder.dtype
 
@@ -290,8 +288,6 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
         prompt_embeds = prompt_embeds.repeat(1, num_images_per_prompt, 1)
         prompt_embeds = prompt_embeds.view(batch_size * num_images_per_prompt, seq_len, -1)
         
-        #self.text_encoder_3.to("cpu")
-
         return prompt_embeds
 
     def _get_clip_prompt_embeds(
@@ -302,10 +298,7 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
         clip_skip: Optional[int] = None,
         clip_model_index: int = 0,
     ):
-        if self.text_encoder.device != "cuda":
-            self.text_encoder.to("cuda")
-        if self.text_encoder_2.device != "cuda":
-            self.text_encoder_2.to("cuda")        
+   
         device = device or self._execution_device
 
         clip_tokenizers = [self.tokenizer, self.tokenizer_2]
@@ -421,11 +414,7 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
             lora_scale (`float`, *optional*):
                 A lora scale that will be applied to all LoRA layers of the text encoder if LoRA layers are loaded.
         """
-        #if self.text_encoder.device.type == "cpu":
-        #    self.text_encoder.to("cuda")
-        #if self.text_encoder_2.device.type == "cpu":
-        #    self.text_encoder_2.to("cuda") 
-        
+
         device = device or self._execution_device
 
         # set lora scale so that monkey patched LoRA
