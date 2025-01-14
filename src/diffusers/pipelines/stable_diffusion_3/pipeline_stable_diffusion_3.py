@@ -1062,12 +1062,12 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
                 self._joint_attention_kwargs = {"ip_adapter_image_embeds": ip_adapter_image_embeds}
             else:
                 self._joint_attention_kwargs.update(ip_adapter_image_embeds=ip_adapter_image_embeds)
-        
+        print('moving text_encoder, text_encoder_2, text_encoder_3, vae to cpu           XXXX')
         self.text_encoder.to("cpu")
         self.text_encoder_2.to("cpu")
         self.text_encoder_3.to("cpu")
         self.vae.to("cpu")
-
+        print('done moving text_encoder, text_encoder_2, text_encoder_3, vae to cpu      XXXX')
         # 7. Denoising loop
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
@@ -1149,7 +1149,7 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
         else:
             latents = (latents / self.vae.config.scaling_factor) + self.vae.config.shift_factor
             
-            self.transformer.to("cpu")
+            #self.transformer.to("cpu")
             self.vae.to("cuda")
 
             image = self.vae.decode(latents, return_dict=False)[0]
