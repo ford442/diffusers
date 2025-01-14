@@ -276,8 +276,7 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
 
         prompt_attention_mask = prompt_attention_mask.view(batch_size, -1)
         prompt_attention_mask = prompt_attention_mask.repeat(num_videos_per_prompt, 1)
-        print('doing text_encoder to cpu')
-        self.text_encoder.to("cpu")
+
         return prompt_embeds, prompt_attention_mask
 
     # Copied from diffusers.pipelines.mochi.pipeline_mochi.MochiPipeline.encode_prompt with 256->128
@@ -775,7 +774,19 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
             self.vae_spatial_compression_ratio,
             self.vae_spatial_compression_ratio,
         )
-
+        
+        print('doing text_encoder to cpu              XX')
+        self.text_encoder.to("cpu")
+        print('finished moving text_encoder to cpu    XX')
+        print('doing vae to cpu')
+        self.vae.to("cpu")
+        print('finished moving vae to cpu')
+        print('checking if transformer on cuda')
+        if self.transformer.device.type == 'cpu'
+            print('moving transformer to cuda             XX')
+            self.transformer.to("cuda")
+            print('finished moving transformer to cuda    XX')
+        
         # 7. Denoising loop
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
@@ -883,8 +894,10 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
                     :, None, None, None, None
                 ]
                 latents = (1 - decode_noise_scale) * latents + decode_noise_scale * noise
-            print('doing transformer to cpu')
+            print('doing transformer to cpu               XX')
             self.transformer.to(torch.device('cpu'))
+            print('finished doing transformer to cpu      XX')
+            print('trade transformer to cpu to save time? ^^')
             print('checking if vae on cuda')
             if self.vae.device.type == "cpu":
                 print('moving vae to cuda')
