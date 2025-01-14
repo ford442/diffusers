@@ -779,12 +779,12 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
         self.text_encoder.to("cpu")
         print('finished moving text_encoder to cpu    XX')
         print('checking if vae on cpu')
-        if self.vae.device.type != 'cpu'
+        if self.vae.device.type != 'cpu':
             print('doing vae to cpu')
             self.vae.to("cpu")
             print('finished moving vae to cpu')
         print('checking if transformer on cuda')
-        if self.transformer.device.type == 'cpu'
+        if self.transformer.device.type == 'cpu':
             print('moving transformer to cuda             XX')
             self.transformer.to("cuda")
             print('finished moving transformer to cuda    XX')
