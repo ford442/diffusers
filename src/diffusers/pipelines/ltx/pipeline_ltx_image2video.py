@@ -732,7 +732,7 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
             height,
             width,
             num_frames,
-            torch.float32,
+            torch.bfloat16,
             device,
             generator,
             latents,
@@ -811,7 +811,7 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
                     attention_kwargs=attention_kwargs,
                     return_dict=False,
                 )[0]
-                noise_pred = noise_pred.float()
+                #  noise_pred = noise_pred.float()
 
                 if self.do_classifier_free_guidance:
                     noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
