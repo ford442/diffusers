@@ -1173,9 +1173,12 @@ class StableDiffusionXLPipeline(
         print('Moving Text Encoder 2 to CPU')
         self.text_encoder_2.to("cpu")
         print('Finished moving Text Encoder 2 to CPU')
-        print('moving vae to cpu')
-        self.vae.to('cpu')
-        print('finished moving vae to cpu')
+        print('Checking if VAE on CPU')
+        
+        if self.vae.device.type != 'cpu':
+            print('moving vae to cpu')
+            self.vae.to('cpu')
+            print('finished moving vae to cpu')
         
         # 8. Denoising loop
         num_warmup_steps = max(len(timesteps) - num_inference_steps * self.scheduler.order, 0)
