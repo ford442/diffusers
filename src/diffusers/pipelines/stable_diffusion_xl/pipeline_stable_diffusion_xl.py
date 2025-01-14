@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import gc
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -346,14 +347,6 @@ class StableDiffusionXLPipeline(
                 Number of layers to be skipped from CLIP while computing the prompt embeddings. A value of 1 means that
                 the output of the pre-final layer will be used for computing the prompt embeddings.
         """
-        print('Checking if Text Encoder 1 is on CUDA')
-        if self.text_encoder.device.type == "cpu":
-            print('Moving Text Encoder 1 to CUDA')
-            self.text_encoder.to("cuda")
-        print('Checking if Text Encoder 2 is on CUDA')
-        if self.text_encoder_2.device.type == "cpu":
-            print('Moving Text Encoder 2 to CUDA')
-            self.text_encoder_2.to("cuda")        
         
         device = device or self._execution_device
 
@@ -1168,17 +1161,14 @@ class StableDiffusionXLPipeline(
                 self.do_classifier_free_guidance,
             )
             
-        print('Moving Text Encoder 1 to CPU')
-        self.text_encoder.to("cpu")
-        print('Moving Text Encoder 2 to CPU')
-        self.text_encoder_2.to("cpu")
-        print('Finished moving Text Encoder 2 to CPU')
+        print('Deleting Text Encoder 1, 2')
+        del self.text_encoder
+        del self.text_encoder_2
+        gc.collect()
         print('Checking if VAE on CPU')
-        
-        if self.vae.device.type != 'cpu':
-            print('moving vae to cpu')
-            self.vae.to('cpu')
-            print('finished moving vae to cpu')
+        print('moving vae to cpu')
+        self.vae.to('cpu')
+        print('finished moving vae to cpu')
         
         # 8. Denoising loop
         num_warmup_steps = max(len(timesteps) - num_inference_steps * self.scheduler.order, 0)
@@ -1298,24 +1288,16 @@ class StableDiffusionXLPipeline(
                 print('Changing latent/VAE to float64')
                 self.vae.to(torch.float64)
                 latents.to(torch.float64)
-                print('Move UNET to CPU.                  XX')
-                self.unet.to("cpu") 
-                print('Finished moving UNET to CPU.       XX')
+                print('Delete UNET.')
+                del self.unet
+                gc.collect()
                 print('Checking if VAE is on CUDA.')
                 if self.vae.device.type == "cpu":
                     print('doing VAE to CUDA.')
                     self.vae.to("cuda")
                 print('VAE Decode.')
                 image = self.vae.decode(latents, return_dict=False)[0]
-                #print('Skipping move UNET to CUDA.')
-                #self.unet.to("cuda") 
-            print('Skipping move VAE to BFLOAT16.')
-           # self.vae.to(dtype=torch.bfloat16)
-           # print('Move Text Encoder 1 to CUDA.')
-           # self.text_encoder.to("cuda")
-           # print('Move Text Encoder 2 to CUDA.')
-           # self.text_encoder_2.to("cuda")
-           # print('Finished moving Text Encoder 2 to CUDA.')
+
         else:
             image = latents
 
