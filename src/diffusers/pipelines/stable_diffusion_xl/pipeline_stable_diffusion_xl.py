@@ -1204,7 +1204,8 @@ class StableDiffusionXLPipeline(
                     continue
 
                 # expand the latents if we are doing classifier free guidance
-                latent_model_input = latents
+                latent_model_input = torch.cat([latents] * 2) if self.do_classifier_free_guidance else latents
+
 
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
 
@@ -1266,10 +1267,10 @@ class StableDiffusionXLPipeline(
             if needs_upcasting:
                 self.upcast_vae()
                 latents = latents.to(next(iter(self.vae.post_quant_conv.parameters())).dtype)
-            #elif latents.dtype != self.vae.dtype:
-                #if torch.backends.mps.is_available():
+            elif latents.dtype != self.vae.dtype:
+                if torch.backends.mps.is_available():
                     # some platforms (eg. apple mps) misbehave due to a pytorch bug: https://github.com/pytorch/pytorch/pull/99272
-                    #self.vae = self.vae.to(latents.dtype)
+                    self.vae = self.vae.to(latents.dtype)
 
             # unscale/denormalize the latents
             # denormalize with the mean and std if available and not None
