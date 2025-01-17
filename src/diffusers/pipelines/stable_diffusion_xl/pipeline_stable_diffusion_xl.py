@@ -14,7 +14,7 @@
 
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-
+import gc
 import torch
 from transformers import (
     CLIPImageProcessor,
@@ -1157,6 +1157,12 @@ class StableDiffusionXLPipeline(
                 self.do_classifier_free_guidance,
             )
 
+        del self.text_encoder
+        del self.text_encoder_2
+        gc.collect()
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
+        
         # 8. Denoising loop
         num_warmup_steps = max(len(timesteps) - num_inference_steps * self.scheduler.order, 0)
 
