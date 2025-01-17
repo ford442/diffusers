@@ -1046,12 +1046,7 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
             else:
                 self._joint_attention_kwargs.update(ip_adapter_image_embeds=ip_adapter_image_embeds)
                 
-        del self.text_encoder
-        del self.text_encoder_2
-        del self.text_encoder_3
-        gc.collect()
-        torch.cuda.empty_cache()
-        torch.cuda.reset_peak_memory_stats()
+
         
         # 7. Denoising loop
         with self.progress_bar(total=num_inference_steps) as progress_bar:
