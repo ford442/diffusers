@@ -1126,9 +1126,10 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
 
         else:
             latents = (latents / self.vae.config.scaling_factor) + self.vae.config.shift_factor
-            latents.to(torch.float32)
             
-            self.vae.to('cuda')
+            latents.to(torch.float32)
+            if self.vae.device.type == 'cpu':
+                self.vae.to('cuda')
             image = self.vae.decode(latents, return_dict=False)[0]
             image = self.image_processor.postprocess(image, output_type=output_type)
 
