@@ -819,7 +819,6 @@ class StableDiffusionXLPipeline(
     def interrupt(self):
         return self._interrupt
 
-    @torch.no_grad()
     @replace_example_docstring(EXAMPLE_DOC_STRING)
     def __call__(
         self,
