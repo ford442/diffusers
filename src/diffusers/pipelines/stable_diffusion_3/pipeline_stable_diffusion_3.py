@@ -1058,6 +1058,9 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
         del self.text_encoder_2
         del self.text_encoder_3
         gc.collect()
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
+        
         print('moving vae to cpu                                                         XXXX')
         self.vae.to("cpu")
         print('done moving text_encoder, text_encoder_2, text_encoder_3, vae to cpu      XXXX')
