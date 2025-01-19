@@ -344,7 +344,10 @@ class StableDiffusionXLPipeline(
                 the output of the pre-final layer will be used for computing the prompt embeddings.
         """
         device = device or self._execution_device
-
+        if self.text_encoder.device.type == 'cpu':
+            self.text_encoder.to('cuda')
+        if self.text_encoder_2.device.type == 'cpu':
+            self.text_encoder_2.to('cuda')
         # set lora scale so that monkey patched LoRA
         # function of text encoder can correctly access it
         if lora_scale is not None and isinstance(self, StableDiffusionXLLoraLoaderMixin):
@@ -1162,6 +1165,8 @@ class StableDiffusionXLPipeline(
         gc.collect()
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
+        if self.vae.device.type != 'cpu':
+            self.vae.to('cpu')
         
         # 8. Denoising loop
         num_warmup_steps = max(len(timesteps) - num_inference_steps * self.scheduler.order, 0)
