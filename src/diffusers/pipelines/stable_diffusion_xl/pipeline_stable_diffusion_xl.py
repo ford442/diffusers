@@ -1286,7 +1286,8 @@ class StableDiffusionXLPipeline(
                     self.vae.to('cuda')
                 latents = latents / self.vae.config.scaling_factor
                 print('Changing latent/VAE to float32')
-           #     self.vae.to(torch.float32)
+                if self.vae.dtype != torch.float32:
+                    self.vae.to(torch.float32)
                 latents.to(torch.float32)
                 
                 image = self.vae.decode(latents, return_dict=False)[0]
