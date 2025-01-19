@@ -1288,9 +1288,7 @@ class StableDiffusionXLPipeline(
                 print('Changing latent/VAE to float32')
                 if self.vae.dtype != torch.float64:
                     self.vae.to(torch.float64)
-                latents.to(torch.float64)
-                
-                image = self.vae.decode(latents, return_dict=False)[0]
+                image = self.vae.decode(latents.to(torch.float64), return_dict=False)[0]
 
             #self.vae.to(dtype=torch.bfloat16)
 
