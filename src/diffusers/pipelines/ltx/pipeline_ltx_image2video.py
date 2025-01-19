@@ -776,15 +776,8 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
         print('doing delete text_encoder')
         del self.text_encoder
         gc.collect()
-        if self.vae.device.type != 'cpu':
-            print('doing vae to cpu             XXXX')
-            self.vae.to("cpu")
-            print('finished moving vae to cpu   XXXX')
-        print('checking if transformer on cuda')
-        if self.transformer.device.type == 'cpu':
-            print('moving transformer to cuda             XX')
-            self.transformer.to("cuda")
-            print('finished moving transformer to cuda    XX')
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
         
         # 7. Denoising loop
         with self.progress_bar(total=num_inference_steps) as progress_bar:
@@ -896,9 +889,8 @@ class LTXImageToVideoPipeline(DiffusionPipeline, FromSingleFileMixin, LTXVideoLo
             print('doing delete transformer')
             del self.transformer
             gc.collect()
-            if self.vae.device.type == "cpu":
-                print('moving vae to cuda')
-                self.vae.to("cuda")
+            torch.cuda.empty_cache()
+            torch.cuda.reset_peak_memory_stats()
             print('doing decode')
             video = self.vae.decode(latents, timestep, return_dict=False)[0]
             video = self.video_processor.postprocess_video(video, output_type=output_type)
