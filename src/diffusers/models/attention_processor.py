@@ -112,7 +112,7 @@ class Attention(nn.Module):
         dropout: float = 0.0,
         bias: bool = False,
         upcast_attention: bool = True,
-        upcast_softmax: bool = True,
+        upcast_softmax: bool = False,
         cross_attention_norm: Optional[str] = None,
         cross_attention_norm_num_groups: int = 32,
         qk_norm: Optional[str] = None,
