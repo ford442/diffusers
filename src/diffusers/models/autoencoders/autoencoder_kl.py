@@ -20,7 +20,7 @@ from ...configuration_utils import ConfigMixin, register_to_config
 from ...loaders import PeftAdapterMixin
 from ...loaders.single_file_model import FromOriginalModelMixin
 from ...utils import deprecate
-from ...utils.accelerate_utils import apply_forward_hook
+
 from ..attention_processor import (
     ADDED_KV_ATTENTION_PROCESSORS,
     CROSS_ATTENTION_PROCESSORS,
@@ -259,7 +259,6 @@ class AutoencoderKL(ModelMixin, ConfigMixin, FromOriginalModelMixin, PeftAdapter
 
         return enc
 
-    @apply_forward_hook
     def encode(
         self, x: torch.Tensor, return_dict: bool = True
     ) -> Union[AutoencoderKLOutput, Tuple[DiagonalGaussianDistribution]]:
@@ -302,7 +301,6 @@ class AutoencoderKL(ModelMixin, ConfigMixin, FromOriginalModelMixin, PeftAdapter
 
         return DecoderOutput(sample=dec)
 
-    @apply_forward_hook
     def decode(
         self, z: torch.FloatTensor, return_dict: bool = True, generator=None
     ) -> Union[DecoderOutput, torch.FloatTensor]:
