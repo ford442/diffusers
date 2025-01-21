@@ -1163,10 +1163,10 @@ class StableDiffusionXLPipeline(
         del self.text_encoder
         del self.text_encoder_2
         gc.collect()
-        #torch.cuda.empty_cache()
-        #torch.cuda.reset_peak_memory_stats()
-        #if self.vae.device.type != 'cpu':
-        #    self.vae.to('cpu')
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
+        if self.vae.device.type != 'cpu':
+            self.vae.to('cpu')
         
         # 8. Denoising loop
         num_warmup_steps = max(len(timesteps) - num_inference_steps * self.scheduler.order, 0)
@@ -1284,8 +1284,8 @@ class StableDiffusionXLPipeline(
             else:
                 del self.unet
                 gc.collect()
-                #torch.cuda.empty_cache()
-                #torch.cuda.reset_peak_memory_stats()   
+                torch.cuda.empty_cache()
+                torch.cuda.reset_peak_memory_stats()   
                 if self.vae.device.type == 'cpu':
                     self.vae.to('cuda')
                     
