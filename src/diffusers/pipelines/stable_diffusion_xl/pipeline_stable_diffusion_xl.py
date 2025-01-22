@@ -344,10 +344,12 @@ class StableDiffusionXLPipeline(
                 the output of the pre-final layer will be used for computing the prompt embeddings.
         """
         device = device or self._execution_device
-        if self.text_encoder.device.type == 'cpu':
-            self.text_encoder.to('cuda')
-        if self.text_encoder_2.device.type == 'cpu':
-            self.text_encoder_2.to('cuda')
+        if self.text_encoder is not None:
+                if self.text_encoder.device.type == 'cpu':
+                    self.text_encoder.to('cuda')
+        if self.text_encoder_2 is not None:
+            if self.text_encoder_2.device.type == 'cpu':
+                self.text_encoder_2.to('cuda')
         # set lora scale so that monkey patched LoRA
         # function of text encoder can correctly access it
         if lora_scale is not None and isinstance(self, StableDiffusionXLLoraLoaderMixin):
