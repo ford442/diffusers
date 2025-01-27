@@ -1478,8 +1478,9 @@ class StableDiffusionXLImg2ImgPipeline(
                 latents = latents * latents_std / self.vae.config.scaling_factor + latents_mean
             else:
                 latents = latents / self.vae.config.scaling_factor
-
-            image = self.vae.decode(latents, return_dict=False)[0]
+                if self.vae.dtype != torch.float64:
+                    self.vae.to(torch.float64)
+                image = self.vae.decode(latents.to(torch.float64), return_dict=False)[0]
 
             # cast back to fp16 if needed
             if needs_upcasting:
