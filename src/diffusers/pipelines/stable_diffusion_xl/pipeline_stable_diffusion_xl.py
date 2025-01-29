@@ -1290,7 +1290,8 @@ class StableDiffusionXLPipeline(
             del self.unet
             gc.collect()
             torch.cuda.empty_cache()
-            torch.cuda.reset_peak_memory_stats()   
+            torch.cuda.reset_peak_memory_stats()  
+            latents=latents.requires_grad_(False)
             image = self.vae.decode(latents, return_dict=False)[0]
 
             # cast back to fp16 if needed
