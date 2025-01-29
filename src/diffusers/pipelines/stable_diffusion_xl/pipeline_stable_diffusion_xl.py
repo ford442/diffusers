@@ -1287,7 +1287,7 @@ class StableDiffusionXLPipeline(
                 latents = latents * latents_std / self.vae.config.scaling_factor + latents_mean
             else:
                 latents = latents / self.vae.config.scaling_factor
-
+            latents = latents.requires_grad_(False)
             image = self.vae.decode(latents, return_dict=False)[0]
 
             # cast back to fp16 if needed
