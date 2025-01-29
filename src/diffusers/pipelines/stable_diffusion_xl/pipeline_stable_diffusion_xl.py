@@ -726,7 +726,7 @@ class StableDiffusionXLPipeline(
             latents = randn_tensor(shape, generator=generator, device=device, dtype=dtype)
         else:
             latents = latents.to(device)
-
+        latents.requires_grad(False)
         # scale the initial noise by the standard deviation required by the scheduler
         latents = latents * self.scheduler.init_noise_sigma
         return latents
@@ -833,7 +833,6 @@ class StableDiffusionXLPipeline(
     def interrupt(self):
         return self._interrupt
 
-    @torch.no_grad()
     @replace_example_docstring(EXAMPLE_DOC_STRING)
     def __call__(
         self,
@@ -1170,7 +1169,7 @@ class StableDiffusionXLPipeline(
                 batch_size * num_images_per_prompt,
                 self.do_classifier_free_guidance,
             )
-
+        self.unet.requires_grad(False)
         # 8. Denoising loop
         num_warmup_steps = max(len(timesteps) - num_inference_steps * self.scheduler.order, 0)
 
