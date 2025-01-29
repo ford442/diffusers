@@ -205,7 +205,7 @@ class VaeImageProcessor(ConfigMixin):
             `np.ndarray`:
                 A NumPy array representation of the images.
         """
-        images = images.cpu().permute(0, 2, 3, 1).float().numpy()
+        images = images.cpu().permute(0, 2, 3, 1).float().detach().numpy()
         return images
 
     @staticmethod
