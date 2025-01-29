@@ -1287,7 +1287,10 @@ class StableDiffusionXLPipeline(
                 latents = latents * latents_std / self.vae.config.scaling_factor + latents_mean
             else:
                 latents = latents / self.vae.config.scaling_factor
-
+            del self.unet
+            gc.collect()
+            torch.cuda.empty_cache()
+            torch.cuda.reset_peak_memory_stats()   
             image = self.vae.decode(latents, return_dict=False)[0]
 
             # cast back to fp16 if needed
