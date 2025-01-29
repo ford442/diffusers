@@ -14,7 +14,7 @@
 
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-
+import gc
 import torch
 from transformers import (
     CLIPImageProcessor,
