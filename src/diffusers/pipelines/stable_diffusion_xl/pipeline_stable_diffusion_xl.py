@@ -1171,7 +1171,6 @@ class StableDiffusionXLPipeline(
             )
             
         self.unet = self.unet.requires_grad_(False)
-        self.scheduler = self.scheduler.requires_grad_(False)
         # 8. Denoising loop
         num_warmup_steps = max(len(timesteps) - num_inference_steps * self.scheduler.order, 0)
 
