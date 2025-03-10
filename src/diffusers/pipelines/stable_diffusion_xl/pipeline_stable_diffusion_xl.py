@@ -1164,11 +1164,11 @@ class StableDiffusionXLPipeline(
 
         del self.text_encoder
         del self.text_encoder_2
+        if self.vae.device.type != 'cpu':
+            self.vae.to('cpu')
         gc.collect()
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
-        if self.vae.device.type != 'cpu':
-            self.vae.to('cpu')
         
         # 8. Denoising loop
         num_warmup_steps = max(len(timesteps) - num_inference_steps * self.scheduler.order, 0)
@@ -1284,17 +1284,16 @@ class StableDiffusionXLPipeline(
                 )
                 latents = latents * latents_std / self.vae.config.scaling_factor + latents_mean
             else:
-                del self.unet
-                gc.collect()
-                torch.cuda.empty_cache()
-                torch.cuda.reset_peak_memory_stats()   
                 if self.vae.device.type == 'cpu':
                     self.vae.to('cuda')
-                    
+                del self.unet
                 latents = latents / self.vae.config.scaling_factor
                 print('Changing latent/VAE to float64')
                 if self.vae.dtype != torch.float64:
                     self.vae.to(torch.float64)
+                gc.collect()
+                torch.cuda.empty_cache()
+                torch.cuda.reset_peak_memory_stats()   
                 print('Doing decode.')
                 image = self.vae.decode(latents.to(torch.float64), return_dict=False)[0]
                 
