@@ -1151,7 +1151,7 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
                 torch.cuda.reset_peak_memory_stats() 
                 self.vae.to("cuda")
             gc.collect()
-            image = self.vae.decode(latents, return_dict=False)[0]
+            image = self.vae.decode(latents.to(torch.float32), return_dict=False)[0]
             image = self.image_processor.postprocess(image, output_type=output_type)
 
         # Offload all models
