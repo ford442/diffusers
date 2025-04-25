@@ -24,7 +24,7 @@
 
 ## Generating Videos with Wan 2.1
 
-We will first need to install some addtional dependencies.
+We will first need to install some additional dependencies.
 
 ```shell
 pip install -u ftfy imageio-ffmpeg imageio
@@ -131,6 +131,100 @@ output = pipe(
     guidance_scale=5.0,
 ).frames[0]
 export_to_video(output, "wan-i2v.mp4", fps=16)
+```
+
+### First and Last Frame Interpolation
+
+```python
+import numpy as np
+import torch
+import torchvision.transforms.functional as TF
+from diffusers import AutoencoderKLWan, WanImageToVideoPipeline
+from diffusers.utils import export_to_video, load_image
+from transformers import CLIPVisionModel
+
+
+model_id = "Wan-AI/Wan2.1-FLF2V-14B-720P-diffusers"
+image_encoder = CLIPVisionModel.from_pretrained(model_id, subfolder="image_encoder", torch_dtype=torch.float32)
+vae = AutoencoderKLWan.from_pretrained(model_id, subfolder="vae", torch_dtype=torch.float32)
+pipe = WanImageToVideoPipeline.from_pretrained(
+    model_id, vae=vae, image_encoder=image_encoder, torch_dtype=torch.bfloat16
+)
+pipe.to("cuda")
+
+first_frame = load_image("https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/flf2v_input_first_frame.png")
+last_frame = load_image("https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/flf2v_input_last_frame.png")
+
+def aspect_ratio_resize(image, pipe, max_area=720 * 1280):
+    aspect_ratio = image.height / image.width
+    mod_value = pipe.vae_scale_factor_spatial * pipe.transformer.config.patch_size[1]
+    height = round(np.sqrt(max_area * aspect_ratio)) // mod_value * mod_value
+    width = round(np.sqrt(max_area / aspect_ratio)) // mod_value * mod_value
+    image = image.resize((width, height))
+    return image, height, width
+
+def center_crop_resize(image, height, width):
+    # Calculate resize ratio to match first frame dimensions
+    resize_ratio = max(width / image.width, height / image.height)
+    
+    # Resize the image
+    width = round(image.width * resize_ratio)
+    height = round(image.height * resize_ratio)
+    size = [width, height]
+    image = TF.center_crop(image, size)
+    
+    return image, height, width
+
+first_frame, height, width = aspect_ratio_resize(first_frame, pipe)
+if last_frame.size != first_frame.size:
+    last_frame, _, _ = center_crop_resize(last_frame, height, width)
+
+prompt = "CG animation style, a small blue bird takes off from the ground, flapping its wings. The bird's feathers are delicate, with a unique pattern on its chest. The background shows a blue sky with white clouds under bright sunshine. The camera follows the bird upward, capturing its flight and the vastness of the sky from a close-up, low-angle perspective."
+
+output = pipe(
+    image=first_frame, last_image=last_frame, prompt=prompt, height=height, width=width, guidance_scale=5.5
+).frames[0]
+export_to_video(output, "output.mp4", fps=16)
+```
+
+### Video to Video Generation
+
+```python
+import torch
+from diffusers.utils import load_video, export_to_video
+from diffusers import AutoencoderKLWan, WanVideoToVideoPipeline, UniPCMultistepScheduler
+
+# Available models: Wan-AI/Wan2.1-T2V-14B-Diffusers, Wan-AI/Wan2.1-T2V-1.3B-Diffusers
+model_id = "Wan-AI/Wan2.1-T2V-1.3B-Diffusers"
+vae = AutoencoderKLWan.from_pretrained(
+    model_id, subfolder="vae", torch_dtype=torch.float32
+)
+pipe = WanVideoToVideoPipeline.from_pretrained(
+    model_id, vae=vae, torch_dtype=torch.bfloat16
+)
+flow_shift = 3.0  # 5.0 for 720P, 3.0 for 480P
+pipe.scheduler = UniPCMultistepScheduler.from_config(
+    pipe.scheduler.config, flow_shift=flow_shift
+)
+# change to pipe.to("cuda") if you have sufficient VRAM
+pipe.enable_model_cpu_offload()
+
+prompt = "A robot standing on a mountain top. The sun is setting in the background"
+negative_prompt = "Bright tones, overexposed, static, blurred details, subtitles, style, works, paintings, images, static, overall gray, worst quality, low quality, JPEG compression residue, ugly, incomplete, extra fingers, poorly drawn hands, poorly drawn faces, deformed, disfigured, misshapen limbs, fused fingers, still picture, messy background, three legs, many people in the background, walking backwards"
+video = load_video(
+    "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/hiker.mp4"
+)
+output = pipe(
+    video=video,
+    prompt=prompt,
+    negative_prompt=negative_prompt,
+    height=480,
+    width=512,
+    guidance_scale=7.0,
+    strength=0.7,
+).frames[0]
+
+export_to_video(output, "wan-v2v.mp4", fps=16)
 ```
 
 ## Memory Optimizations for Wan 2.1
@@ -323,7 +417,7 @@ import numpy as np
 from diffusers import AutoencoderKLWan, WanTransformer3DModel, WanImageToVideoPipeline
 from diffusers.hooks.group_offloading import apply_group_offloading
 from diffusers.utils import export_to_video, load_image
-from transformers import UMT5EncoderModel, CLIPVisionMode
+from transformers import UMT5EncoderModel, CLIPVisionModel
 
 model_id = "Wan-AI/Wan2.1-I2V-14B-720P-Diffusers"
 image_encoder = CLIPVisionModel.from_pretrained(
@@ -356,7 +450,7 @@ prompt = (
     "An astronaut hatching from an egg, on the surface of the moon, the darkness and depth of space realised in "
     "the background. High quality, ultrarealistic detail and breath-taking movie-like camera shot."
 )
-negative_prompt = "Bright tones, overexposed, static, blurred details, subtitles, style, works, paintings, images, static, overall gray, worst quality, low quality, JPEG compression residue, ugly, incomplete, extra fingers, poorly drawn hands, poorly drawn faces, deformed, disfigured, misshapen limbs, fused fingers, still picture, messy background, three legs, many people in the background, walking backwards
+negative_prompt = "Bright tones, overexposed, static, blurred details, subtitles, style, works, paintings, images, static, overall gray, worst quality, low quality, JPEG compression residue, ugly, incomplete, extra fingers, poorly drawn hands, poorly drawn faces, deformed, disfigured, misshapen limbs, fused fingers, still picture, messy background, three legs, many people in the background, walking backwards"
 num_frames = 33
 
 output = pipe(
@@ -372,7 +466,7 @@ output = pipe(
 export_to_video(output, "wan-i2v.mp4", fps=16)
 ```
 
-### Using a Custom Scheduler
+## Using a Custom Scheduler
 
 Wan can be used with many different schedulers, each with their own benefits regarding speed and generation quality. By default, Wan uses the `UniPCMultistepScheduler(prediction_type="flow_prediction", use_flow_sigmas=True, flow_shift=3.0)` scheduler. You can use a different scheduler as follows:
 
@@ -403,7 +497,7 @@ transformer = WanTransformer3DModel.from_single_file(ckpt_path, torch_dtype=torc
 pipe = WanPipeline.from_pretrained("Wan-AI/Wan2.1-T2V-1.3B-Diffusers", transformer=transformer)
 ```
 
-## Recommendations for Inference:
+## Recommendations for Inference
 - Keep `AutencoderKLWan` in `torch.float32` for better decoding quality.
 - `num_frames` should satisfy the following constraint: `(num_frames - 1) % 4 == 0`
 - For smaller resolution videos, try lower values of `shift` (between `2.0` to `5.0`) in the [Scheduler](https://huggingface.co/docs/diffusers/main/en/api/schedulers/flow_match_euler_discrete#diffusers.FlowMatchEulerDiscreteScheduler.shift). For larger resolution videos, try higher values (between `7.0` and `12.0`). The default value is `3.0` for Wan.
