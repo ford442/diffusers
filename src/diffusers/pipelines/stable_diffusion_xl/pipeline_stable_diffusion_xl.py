@@ -1196,7 +1196,7 @@ class StableDiffusionXLPipeline(
             timestep_cond = self.get_guidance_scale_embedding(
                 guidance_scale_tensor, embedding_dim=self.unet.config.time_cond_proj_dim
             ).to(device=device, dtype=latents.dtype)
-
+        self.unet.to(memory_format=torch.channels_last)
         self._num_timesteps = len(timesteps)
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
@@ -1207,7 +1207,7 @@ class StableDiffusionXLPipeline(
                 latent_model_input = torch.cat([latents] * 2) if self.do_classifier_free_guidance else latents
 
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
-
+                latent_model_input.to(memory_format=torch.channels_last)
                 # predict the noise residual
                 added_cond_kwargs = {"text_embeds": add_text_embeds, "time_ids": add_time_ids}
                 if ip_adapter_image is not None or ip_adapter_image_embeds is not None:
@@ -1288,9 +1288,11 @@ class StableDiffusionXLPipeline(
                     self.vae.to('cuda')
                 del self.unet
                 latents = latents / self.vae.config.scaling_factor
+                latents.to(memory_format=torch.channels_last)
                 print('Changing latent/VAE to float64')
                 if self.vae.dtype != torch.float64:
                     self.vae.to(torch.float64)
+                self.vae.to(memory_format=torch.channels_last)
                 gc.collect()
                 torch.cuda.empty_cache()
                 torch.cuda.reset_peak_memory_stats()   
