@@ -1049,6 +1049,9 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
         del self.text_encoder
         del self.text_encoder_2
         del self.text_encoder_3
+
+        self.transformer.to(memory_format=torch.channels_last)
+        self.vae.to(memory_format=torch.channels_last)
         gc.collect()
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
@@ -1063,7 +1066,7 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
                 latent_model_input = torch.cat([latents] * 2) if self.do_classifier_free_guidance else latents
                 # broadcast to batch dimension in a way that's compatible with ONNX/Core ML
                 timestep = t.expand(latent_model_input.shape[0])
-
+                latent_model_input.to(memory_format=torch.channels_last)
                 noise_pred = self.transformer(
                     hidden_states=latent_model_input,
                     timestep=timestep,
@@ -1136,7 +1139,9 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
                 self.vae.to('cuda')
             latents = (latents / self.vae.config.scaling_factor) + self.vae.config.shift_factor
             #self.vae.to(torch.float32)
-            image = self.vae.decode(latents.to(torch.float32), return_dict=False)[0]
+            latents.to(torch.float32)
+            latents.to(memory_format=torch.channels_last)
+            image = self.vae.decode(latents, return_dict=False)[0]
             image = self.image_processor.postprocess(image, output_type=output_type)
 
         # Offload all models
