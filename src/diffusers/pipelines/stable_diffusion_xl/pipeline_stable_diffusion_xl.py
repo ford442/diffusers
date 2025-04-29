@@ -824,7 +824,6 @@ class StableDiffusionXLPipeline(
     def interrupt(self):
         return self._interrupt
 
-    @torch.no_grad()
     @replace_example_docstring(EXAMPLE_DOC_STRING)
     def __call__(
         self,
@@ -1010,7 +1009,6 @@ class StableDiffusionXLPipeline(
             [`~pipelines.stable_diffusion_xl.StableDiffusionXLPipelineOutput`] if `return_dict` is True, otherwise a
             `tuple`. When returning a tuple, the first element is a list with the generated images.
         """
-
         callback = kwargs.pop("callback", None)
         callback_steps = kwargs.pop("callback_steps", None)
 
@@ -1076,13 +1074,13 @@ class StableDiffusionXLPipeline(
         lora_scale = (
             self.cross_attention_kwargs.get("scale", None) if self.cross_attention_kwargs is not None else None
         )
-
-        (
+        with torch.inference_mode():
+         (
             prompt_embeds,
             negative_prompt_embeds,
             pooled_prompt_embeds,
             negative_pooled_prompt_embeds,
-        ) = self.encode_prompt(
+         ) = self.encode_prompt(
             prompt=prompt,
             prompt_2=prompt_2,
             device=device,
@@ -1096,7 +1094,7 @@ class StableDiffusionXLPipeline(
             negative_pooled_prompt_embeds=negative_pooled_prompt_embeds,
             lora_scale=lora_scale,
             clip_skip=self.clip_skip,
-        )
+         )
 
         # 4. Prepare timesteps
         timesteps, num_inference_steps = retrieve_timesteps(
@@ -1212,7 +1210,8 @@ class StableDiffusionXLPipeline(
                 added_cond_kwargs = {"text_embeds": add_text_embeds, "time_ids": add_time_ids}
                 if ip_adapter_image is not None or ip_adapter_image_embeds is not None:
                     added_cond_kwargs["image_embeds"] = image_embeds
-                noise_pred = self.unet(
+                with torch.no_grad():
+                 noise_pred = self.unet(
                     latent_model_input,
                     t,
                     encoder_hidden_states=prompt_embeds,
@@ -1220,7 +1219,7 @@ class StableDiffusionXLPipeline(
                     cross_attention_kwargs=self.cross_attention_kwargs,
                     added_cond_kwargs=added_cond_kwargs,
                     return_dict=False,
-                )[0]
+                 )[0]
 
                 # perform guidance
                 if self.do_classifier_free_guidance:
@@ -1297,7 +1296,8 @@ class StableDiffusionXLPipeline(
                 torch.cuda.empty_cache()
                 torch.cuda.reset_peak_memory_stats()   
                 print('Doing decode.')
-                image = self.vae.decode(latents.to(torch.float64), return_dict=False)[0]
+                with torch.inference_mode():
+                 image = self.vae.decode(latents.to(torch.float64), return_dict=False)[0]
                 
             print('Changing VAE to float32')
             self.vae.to(dtype=torch.float32)
