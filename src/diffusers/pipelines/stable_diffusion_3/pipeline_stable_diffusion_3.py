@@ -1049,13 +1049,16 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
         del self.text_encoder
         del self.text_encoder_2
         del self.text_encoder_3
-        self.vae.to('cpu')
+        if self.vae.device.type == 'cuda':
+            self.vae.to("cpu")
         gc.collect()
         torch.cuda.empty_cache()
         torch.cuda.reset_peak_memory_stats()
         if self.transformer.device.type == 'cpu':
             self.transformer.to('cuda')
-        # 7. Denoising loop
+        gc.collect()
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()        # 7. Denoising loop
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
                 if self.interrupt:
@@ -1134,10 +1137,12 @@ class StableDiffusion3Pipeline(DiffusionPipeline, SD3LoraLoaderMixin, FromSingle
             image = latents
 
         else:
-            if self.vae.device.type == 'cpu':
-                self.vae.to('cuda')
             latents = (latents / self.vae.config.scaling_factor) + self.vae.config.shift_factor
-            #self.vae.to(torch.float32)
+            torch.cuda.empty_cache()
+            torch.cuda.reset_peak_memory_stats() 
+            if self.vae.device.type == 'cpu':
+                self.vae.to("cuda")
+            gc.collect()
             image = self.vae.decode(latents.to(torch.float32), return_dict=False)[0]
             image = self.image_processor.postprocess(image, output_type=output_type)
 
