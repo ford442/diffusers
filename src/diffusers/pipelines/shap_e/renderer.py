@@ -1,4 +1,4 @@
-# Copyright 2024 Open AI and The HuggingFace Team. All rights reserved.
+# Copyright 2025 Open AI and The HuggingFace Team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ def posenc_nerf(x: torch.Tensor, min_deg: int = 0, max_deg: int = 15) -> torch.T
     """
     Concatenate x and its positional encodings, following NeRF.
 
-    Reference: https://arxiv.org/pdf/2210.04628.pdf
+    Reference: https://huggingface.co/papers/2210.04628
     """
     if min_deg == max_deg:
         return x
