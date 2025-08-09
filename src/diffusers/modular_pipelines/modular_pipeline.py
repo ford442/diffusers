@@ -61,6 +61,7 @@ MODULAR_PIPELINE_MAPPING = OrderedDict(
     [
         ("stable-diffusion-xl", "StableDiffusionXLModularPipeline"),
         ("wan", "WanModularPipeline"),
+        ("flux", "FluxModularPipeline"),
     ]
 )
 
@@ -68,6 +69,7 @@ MODULAR_PIPELINE_BLOCKS_MAPPING = OrderedDict(
     [
         ("StableDiffusionXLModularPipeline", "StableDiffusionXLAutoBlocks"),
         ("WanModularPipeline", "WanAutoBlocks"),
+        ("FluxModularPipeline", "FluxAutoBlocks"),
     ]
 )
 
@@ -490,6 +492,22 @@ class ModularPipelineBlocks(ConfigMixin, PushToHubMixin):
                     combined_dict[output_param.name] = output_param
 
         return list(combined_dict.values())
+
+    @property
+    def input_names(self) -> List[str]:
+        return [input_param.name for input_param in self.inputs]
+
+    @property
+    def intermediate_input_names(self) -> List[str]:
+        return [input_param.name for input_param in self.intermediate_inputs]
+
+    @property
+    def intermediate_output_names(self) -> List[str]:
+        return [output_param.name for output_param in self.intermediate_outputs]
+
+    @property
+    def output_names(self) -> List[str]:
+        return [output_param.name for output_param in self.outputs]
 
 
 class PipelineBlock(ModularPipelineBlocks):
@@ -1663,7 +1681,7 @@ class LoopSequentialPipelineBlocks(ModularPipelineBlocks):
             if input_param.name:
                 value = state.get_intermediate(input_param.name)
                 if input_param.required and value is None:
-                    raise ValueError(f"Required intermediate input '{input_param.name}' is missing")
+                    raise ValueError(f"Required intermediate input '{input_param.name}' is missing.")
                 elif value is not None or (value is None and input_param.name not in data):
                     data[input_param.name] = value
             elif input_param.kwargs_type:
@@ -2837,3 +2855,8 @@ class ModularPipeline(ConfigMixin, PushToHubMixin):
             type_hint=type_hint,
             **spec_dict,
         )
+
+    def set_progress_bar_config(self, **kwargs):
+        for sub_block_name, sub_block in self.blocks.sub_blocks.items():
+            if hasattr(sub_block, "set_progress_bar_config"):
+                sub_block.set_progress_bar_config(**kwargs)
