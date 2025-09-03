@@ -1,12 +1,11 @@
 import gc
 import unittest
 
-import torch
-
 from diffusers import (
     SanaTransformer2DModel,
 )
-from diffusers.utils.testing_utils import (
+
+from ..testing_utils import (
     backend_empty_cache,
     enable_full_determinism,
     require_torch_accelerator,
@@ -53,9 +52,9 @@ class SanaTransformer2DModelSingleFileTests(unittest.TestCase):
 
     def test_checkpoint_loading(self):
         for ckpt_path in self.alternate_keys_ckpt_paths:
-            torch.cuda.empty_cache()
+            backend_empty_cache(torch_device)
             model = self.model_class.from_single_file(ckpt_path)
 
             del model
             gc.collect()
-            torch.cuda.empty_cache()
+            backend_empty_cache(torch_device)

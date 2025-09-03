@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2024 HuggingFace Inc.
+# Copyright 2025 HuggingFace Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,15 +20,16 @@ import numpy as np
 import torch
 
 from diffusers import ConsistencyDecoderVAE, StableDiffusionPipeline
-from diffusers.utils.testing_utils import (
+from diffusers.utils.torch_utils import randn_tensor
+
+from ...testing_utils import (
+    backend_empty_cache,
     enable_full_determinism,
     load_image,
     slow,
     torch_all_close,
     torch_device,
 )
-from diffusers.utils.torch_utils import randn_tensor
-
 from ..test_modeling_common import ModelTesterMixin
 
 
@@ -162,13 +163,13 @@ class ConsistencyDecoderVAEIntegrationTests(unittest.TestCase):
         # clean up the VRAM before each test
         super().setUp()
         gc.collect()
-        torch.cuda.empty_cache()
+        backend_empty_cache(torch_device)
 
     def tearDown(self):
         # clean up the VRAM after each test
         super().tearDown()
         gc.collect()
-        torch.cuda.empty_cache()
+        backend_empty_cache(torch_device)
 
     @torch.no_grad()
     def test_encode_decode(self):
