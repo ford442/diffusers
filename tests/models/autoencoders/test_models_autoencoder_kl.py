@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2024 HuggingFace Inc.
+# Copyright 2025 HuggingFace Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ from parameterized import parameterized
 
 from diffusers import AutoencoderKL
 from diffusers.utils.import_utils import is_xformers_available
-from diffusers.utils.testing_utils import (
+
+from ...testing_utils import (
     backend_empty_cache,
     enable_full_determinism,
     floats_tensor,
@@ -34,7 +35,6 @@ from diffusers.utils.testing_utils import (
     torch_all_close,
     torch_device,
 )
-
 from ..test_modeling_common import ModelTesterMixin, UNetTesterMixin
 
 
@@ -165,7 +165,7 @@ class AutoencoderKLTests(ModelTesterMixin, UNetTesterMixin, unittest.TestCase):
         model.eval()
 
         # Keep generator on CPU for non-CUDA devices to compare outputs with CPU result tensors
-        generator_device = "cpu" if not torch_device.startswith("cuda") else "cuda"
+        generator_device = "cpu" if not torch_device.startswith(torch_device) else torch_device
         if torch_device != "mps":
             generator = torch.Generator(device=generator_device).manual_seed(0)
         else:
@@ -263,7 +263,7 @@ class AutoencoderKLIntegrationTests(unittest.TestCase):
         return model
 
     def get_generator(self, seed=0):
-        generator_device = "cpu" if not torch_device.startswith("cuda") else "cuda"
+        generator_device = "cpu" if not torch_device.startswith(torch_device) else torch_device
         if torch_device != "mps":
             return torch.Generator(device=generator_device).manual_seed(seed)
         return torch.manual_seed(seed)

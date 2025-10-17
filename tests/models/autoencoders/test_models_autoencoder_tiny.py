@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2024 HuggingFace Inc.
+# Copyright 2025 HuggingFace Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ import torch
 from parameterized import parameterized
 
 from diffusers import AutoencoderTiny
-from diffusers.utils.testing_utils import (
+
+from ...testing_utils import (
     backend_empty_cache,
     enable_full_determinism,
     floats_tensor,
@@ -30,7 +31,6 @@ from diffusers.utils.testing_utils import (
     torch_all_close,
     torch_device,
 )
-
 from ..test_modeling_common import ModelTesterMixin, UNetTesterMixin
 
 
@@ -172,6 +172,22 @@ class AutoencoderTinyTests(ModelTesterMixin, UNetTesterMixin, unittest.TestCase)
             if "encoder.layers" in name:
                 continue
             self.assertTrue(torch_all_close(param.grad.data, named_params_2[name].grad.data, atol=3e-2))
+
+    @unittest.skip(
+        "The forward pass of AutoencoderTiny creates a torch.float32 tensor. This causes inference in compute_dtype=torch.bfloat16 to fail. To fix:\n"
+        "1. Change the forward pass to be dtype agnostic.\n"
+        "2. Unskip this test."
+    )
+    def test_layerwise_casting_inference(self):
+        pass
+
+    @unittest.skip(
+        "The forward pass of AutoencoderTiny creates a torch.float32 tensor. This causes inference in compute_dtype=torch.bfloat16 to fail. To fix:\n"
+        "1. Change the forward pass to be dtype agnostic.\n"
+        "2. Unskip this test."
+    )
+    def test_layerwise_casting_memory(self):
+        pass
 
 
 @slow

@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2024 HuggingFace Inc.
+# Copyright 2025 HuggingFace Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,16 +15,17 @@
 
 import unittest
 
+import pytest
 import torch
 
 from diffusers import UNet1DModel
-from diffusers.utils.testing_utils import (
+
+from ...testing_utils import (
     backend_manual_seed,
     floats_tensor,
     slow,
     torch_device,
 )
-
 from ..test_modeling_common import ModelTesterMixin, UNetTesterMixin
 
 
@@ -57,6 +58,10 @@ class UNet1DModelTests(ModelTesterMixin, UNetTesterMixin, unittest.TestCase):
 
     @unittest.skip("Test not supported.")
     def test_training(self):
+        pass
+
+    @unittest.skip("Test not supported.")
+    def test_layerwise_casting_training(self):
         pass
 
     def test_determinism(self):
@@ -152,6 +157,28 @@ class UNet1DModelTests(ModelTesterMixin, UNetTesterMixin, unittest.TestCase):
         assert (output_sum - 224.0896).abs() < 0.5
         assert (output_max - 0.0607).abs() < 4e-4
 
+    @pytest.mark.xfail(
+        reason=(
+            "RuntimeError: 'fill_out' not implemented for 'Float8_e4m3fn'. The error is caused due to certain torch.float8_e4m3fn and torch.float8_e5m2 operations "
+            "not being supported when using deterministic algorithms (which is what the tests run with). To fix:\n"
+            "1. Wait for next PyTorch release: https://github.com/pytorch/pytorch/issues/137160.\n"
+            "2. Unskip this test."
+        ),
+    )
+    def test_layerwise_casting_inference(self):
+        super().test_layerwise_casting_inference()
+
+    @pytest.mark.xfail(
+        reason=(
+            "RuntimeError: 'fill_out' not implemented for 'Float8_e4m3fn'. The error is caused due to certain torch.float8_e4m3fn and torch.float8_e5m2 operations "
+            "not being supported when using deterministic algorithms (which is what the tests run with). To fix:\n"
+            "1. Wait for next PyTorch release: https://github.com/pytorch/pytorch/issues/137160.\n"
+            "2. Unskip this test."
+        ),
+    )
+    def test_layerwise_casting_memory(self):
+        pass
+
 
 class UNetRLModelTests(ModelTesterMixin, UNetTesterMixin, unittest.TestCase):
     model_class = UNet1DModel
@@ -216,6 +243,10 @@ class UNetRLModelTests(ModelTesterMixin, UNetTesterMixin, unittest.TestCase):
     def test_training(self):
         pass
 
+    @unittest.skip("Test not supported.")
+    def test_layerwise_casting_training(self):
+        pass
+
     def prepare_init_args_and_inputs_for_common(self):
         init_dict = {
             "in_channels": 14,
@@ -273,4 +304,26 @@ class UNetRLModelTests(ModelTesterMixin, UNetTesterMixin, unittest.TestCase):
     @unittest.skip("Test not supported.")
     def test_forward_with_norm_groups(self):
         # Not implemented yet for this UNet
+        pass
+
+    @pytest.mark.xfail(
+        reason=(
+            "RuntimeError: 'fill_out' not implemented for 'Float8_e4m3fn'. The error is caused due to certain torch.float8_e4m3fn and torch.float8_e5m2 operations "
+            "not being supported when using deterministic algorithms (which is what the tests run with). To fix:\n"
+            "1. Wait for next PyTorch release: https://github.com/pytorch/pytorch/issues/137160.\n"
+            "2. Unskip this test."
+        ),
+    )
+    def test_layerwise_casting_inference(self):
+        pass
+
+    @pytest.mark.xfail(
+        reason=(
+            "RuntimeError: 'fill_out' not implemented for 'Float8_e4m3fn'. The error is caused due to certain torch.float8_e4m3fn and torch.float8_e5m2 operations "
+            "not being supported when using deterministic algorithms (which is what the tests run with). To fix:\n"
+            "1. Wait for next PyTorch release: https://github.com/pytorch/pytorch/issues/137160.\n"
+            "2. Unskip this test."
+        ),
+    )
+    def test_layerwise_casting_memory(self):
         pass
